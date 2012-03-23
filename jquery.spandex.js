@@ -121,8 +121,10 @@
               }
             }
             $(window).bind('resize.spandex', resizeCallback);
-            resizeCallback();
-            $img.fadeIn(settings.speed);
+            $(function() {
+              resizeCallback();
+              $img.fadeIn(settings.speed);
+            });
           };
 
           var options = {
