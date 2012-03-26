@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Spandex Test</title>
+  <link href="test.css" media="all" rel="stylesheet" type="text/css" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+  <script src="../lib/jquery.spandex.js" type="text/javascript"></script>
+  <script src="test.js" type="text/javascript"></script>
+</head>
+<body>
+  <div class="controls">
+    <h2>Should:</h2>
+    <ol>
+      <li>prepend to body &#10004;</li>
+      <li>have no scroll bars &#10004;</li>
+      <li>have no white space</li>
+    </ol>
+    <button data-image="images/normal.jpg" data-target="body">normal</button>
+    <button data-image="images/panoramic.jpg" data-target="body">ppanoramic</button>
+    <button data-image="images/tall.jpg" data-target="body">tall</button>
+  </div>
+<script>
+  $(function() {
+    $('body').spandex({use: "images/tall.jpg", speed: 500});
+  });
+</script>
+</body>

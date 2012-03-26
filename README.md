@@ -46,7 +46,7 @@ $dFloor = $("#dancefloor");
 
 $elem = $("#myElem");
 $elem.css({position: "absolute"});
-$dFloor.bind("stretch", function(event, values) {
+$dFloor.bind("stretch", function(image, values) {
   $elem.css("top", (values.height * 0.3 * values.ratio) - values.offsetTop);
   $elem.css("left", (values.width * 0.1) - values.offsetLeft);
 });

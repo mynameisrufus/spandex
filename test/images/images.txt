@@ -1,0 +1,8 @@
+panoramic.jpg
+http://commons.wikimedia.org/wiki/File:Untersberg_panoramic_view_winter.jpg
+
+tall.jpg
+http://commons.wikimedia.org/wiki/File:Dark_%26_Tall.jpg
+
+normail.jpg
+http://commons.wikimedia.org/wiki/File:Disco_ball_1.jpg
