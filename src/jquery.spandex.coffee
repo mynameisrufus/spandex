@@ -1,12 +1,8 @@
 $ = jQuery
 
-# ADD DEFER FUNCTION
-
 $.fn.spandex = (method) ->
 
   safe = $.browser.msie && $.browser.version <= 7
-
-  # Stub height function if spandex is attached to body
 
   calculate = (bw, bh, ow, oh) ->
     # bw: bounding width
@@ -38,25 +34,24 @@ $.fn.spandex = (method) ->
 
   stretch = ($wrapper, $image, options) =>
 
-    width = =>
-      x = if options.fullscreen then $(window).width() else @width()
-      x = x - (options.offset.left + options.offset.right)
-      if (x >= options.min.width) then x else options.min.width
+    x = if options.fullscreen then $(window).width() else @width()
+    x = x - (options.offset.left + options.offset.right)
 
-    height = =>
-      y = if options.fullscreen then $(window).height() else @height()
-      y = y - (options.offset.top + options.offset.bottom)
-      if (y >= options.min.height) then y else options.min.height
+    y = if options.fullscreen then $(window).height() else @height()
+    y = y - (options.offset.top + options.offset.bottom)
 
-    width  = width()
-    height = height()
+    width  = x
+    height = y
 
     $wrapper.css $.extend {
       height: height
       width: width
     }, options.offset
 
-    calc = calculate width, height, options.image.width, options.image.height
+    ix = if (width >= options.min.width) then width else options.min.width
+    iy = if (height >= options.min.height) then height else options.min.height
+
+    calc = calculate ix, iy, options.image.width, options.image.height
     css  = top: 0, left: 0, width: calc.width, height: calc.height
 
     if options.centeredY
@@ -97,21 +92,27 @@ $.fn.spandex = (method) ->
           width     : "100%"
         }, options.wrapper
 
-        $wrapper.data 'spandex', $.extend {
+        _options = $.extend {
           speed     : 0
           centeredX : true
           centeredY : true
           defer: 0
-          min:
-            width: 0
-            height: 0
-          offset:
-            top: 0
-            bottom: 0
-            left: 0
-            right: 0
           fullscreen: true
         }, options
+
+        _options.min = $.extend {
+          width: 0
+          height: 0
+        }, options.min
+
+        _options.offset = $.extend {
+          top: 0
+          bottom: 0
+          left: 0
+          right: 0
+        }, options.offset
+
+        $wrapper.data 'spandex', _options
 
         $(@).append($wrapper).
           bind('change.spandex', options.change).
