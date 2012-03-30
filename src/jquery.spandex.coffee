@@ -1,32 +1,119 @@
 $ = jQuery
 
+# ADD DEFER FUNCTION
+
 $.fn.spandex = (method) ->
+
+  safe = $.browser.msie && $.browser.version <= 7
+
+  # Stub height function if spandex is attached to body
+
+  calculate = (bw, bh, ow, oh) ->
+    # bw: bounding width
+    # bh: bounding height
+    # ow: original width
+    # oh: original height
+    # r : ratio
+    # nw: new width
+    # nh: new height
+    # ot: offset top
+    # ol: offset left
+
+    r = ow / oh
+
+    if ( bw / r ) > bh
+      nw = bw
+      nh = ( bw / ow ) * oh
+      ot = ( ( bw / r ) - bh ) / 2
+      ol = 0
+      s  = bw / ow
+    else
+      nh = bh
+      nw = ( bh / oh ) * ow
+      ot = 0
+      ol = ( nw - bw ) / 2
+      s  = bh / oh
+
+    width: Math.ceil(nw), height: Math.ceil(nh), top: ot, left: ol, ratio: r, scale: s
+
+  stretch = ($wrapper, $image, options) =>
+
+    width = =>
+      x = if options.fullscreen then $(window).width() else @width()
+      x = x - (options.offset.left + options.offset.right)
+      if (x >= options.min.width) then x else options.min.width
+
+    height = =>
+      y = if options.fullscreen then $(window).height() else @height()
+      y = y - (options.offset.top + options.offset.bottom)
+      if (y >= options.min.height) then y else options.min.height
+
+    width  = width()
+    height = height()
+
+    $wrapper.css $.extend {
+      height: height
+      width: width
+    }, options.offset
+
+    calc = calculate width, height, options.image.width, options.image.height
+    css  = top: 0, left: 0, width: calc.width, height: calc.height
+
+    if options.centeredY
+      css.top = "-#{calc.top}px"
+    if options.centeredX
+      css.left = "-#{calc.left}px"
+
+    $image.css css
+
+    @trigger 'stretch',
+      wrapper:
+        height: height
+        width: width
+        offset: options.offset
+      image:
+         height: calc.width
+         width: calc.height
+         offset:
+           top: calc.top
+           left: calc.left
+         ratio: calc.ratio
+         scale: calc.scale
+
   methods =
     init: (options) ->
       @each ->
         $wrapper = $ '<div class="spandex"/>'
 
         $wrapper.css $.extend {
-          left     : 0
-          top      : 0
-          position : "fixed"
-          overflow : "hidden"
-          zIndex   : -999999
-          margin   : 0
-          padding  : 0
-          height   : "100%"
-          width    : "100%"
+          left      : 0
+          top       : 0
+          position  : "fixed"
+          overflow  : "hidden"
+          zIndex    : -999999
+          margin    : 0
+          padding   : 0
+          height    : "100%"
+          width     : "100%"
         }, options.wrapper
 
-        delete options.wrapper
-
         $wrapper.data 'spandex', $.extend {
-          speed    : 0
-          centeredX: true
-          centeredY: true
+          speed     : 0
+          centeredX : true
+          centeredY : true
+          defer: 0
+          min:
+            width: 0
+            height: 0
+          offset:
+            top: 0
+            bottom: 0
+            left: 0
+            right: 0
+          fullscreen: true
         }, options
 
-        $(@).prepend($wrapper).
+        $(@).append($wrapper).
           bind('change.spandex', options.change).
           bind('stretch.spandex', options.stretch)
 
@@ -34,16 +121,18 @@ $.fn.spandex = (method) ->
         methods.use.call @, options.use
       else
         @
+    
+    destroy: ->
+      @trigger 'destroy'
+
+    stretch: ->
+      $(@).resize()
 
     use: (src, callback) ->
-
-      stretch = ($wrapper, $image, options) =>
-
-
       @each (index, el) =>
-        $wrapper = $(@).find '.spandex'
+        $wrapper = $(el).find '.spandex'
 
-        options = $wrapper.data 'spandex'
+        options  = $wrapper.data 'spandex'
 
         $image   = $("<img />").css
           position: "absolute",
@@ -53,124 +142,54 @@ $.fn.spandex = (method) ->
           border: "none",
           zIndex: -999999
 
-        $wrapper.find('img').fadeOut options.speed, ->
-          $(this).remove()
-        $wrapper.append $image
-        $image.fadeIn options.speed
+        loadCallback = =>
+          $wrapper.find('img').fadeOut options.speed, ->
+            $(this).remove()
 
-        $image.on 'load', =>
+          $wrapper.append $image
+          # iOS needs a wait for the animation to work
+          $image.fadeIn options.speed
+
+          options.image =
+            width: $image.width()
+            height: $image.height()
+
+          $wrapper.data 'spandex', options
+
+          stretchCallback = ->
+            func = ->
+              stretch $wrapper, $image, options
+            if safe
+              try
+                func()
+              catch e
+                # nothing
+            else
+              func()
+
+          stretchCallback()
+
           @trigger 'change', $image
+
           callback.call @, $image, values if callback
 
-        $image.on 'load', ->
-          stretch $wrapper, $image, options
+          $(window).on "resize", stretchCallback
 
-        $(window).on 'resize.spandex', ->
-          stretch $wrapper, $image
+          @one 'destroy', =>
+            @unbind '.spandex'
+            $(window).off "resize", stretchCallback
+            $wrapper.remove()
 
-        $image.attr 'src', src
+        deferWrap = ->
+          clearTimeout $wrapper.data('spandex.timeout')
+          unless options.defer == 0
+            id = setTimeout loadCallback, options.defer
+            $wrapper.data 'spandex.timeout', id
+          else
+            loadCallback()
 
-      #   $this.find('img.spandex').fadeOut settings.speed, ->
-      #     $(this).remove()
-
-      #   $("<img />").css(options)
-      #               .bind("load", load)
-      #               .appendTo($this)
-      #               .attr("class", "spandex")
-      #               .attr("src", src)
-      # rootElement = if ("onorientationchange" in window) then $(document) else $(window)
-
-      # @each ->
-      #   silentFail = $.browser.msie && $.browser.version <= 7
-      #   $this = $(@)
-      #   settings = $this.data("spandex")
-
-      #   load = (e) ->
-
-      #     $this.trigger('change', src)
-
-      #     $img = $(this)
-      #     $img.css({width: "auto", height: "auto"})
-      #     imgWidth = this.width || $(e.target).width()
-      #     imgHeight = this.height || $(e.target).height()
-      #     imgRatio = imgWidth / imgHeight
-
-      #     resize = ->
-      #       bgCSS = {left: 0, top: 0}
-
-      #       width = ->
-      #         if (settings.minWidth)
-      #           if (rootElement.width() >= settings.minWidth) then rootElement.width() else settings.minWidth
-      #         else
-      #           rootElement.width()
-
-      #       bgWidth = width()
-      #       bgHeight = bgWidth / imgRatio
-      #       if bgHeight >= rootElement.height()
-      #         bgOffsetTop = (bgHeight - rootElement.height()) /2
-      #         if settings.centeredY
-      #           $.extend(bgCSS, {top: "-" + bgOffsetTop + "px"})
-      #       else
-      #         bgHeight = rootElement.height()
-      #         bgWidth = bgHeight * imgRatio
-      #         bgOffsetLeft = (bgWidth - rootElement.width()) / 2
-      #         if settings.centeredX
-      #           $.extend(bgCSS, {left: "-" + bgOffsetLeft + "px"})
-
-      #       $this.width( bgWidth ).height( bgHeight )
-      #       $img.css($.extend(bgCSS, {width: bgWidth, height: bgHeight}))
-
-      #       values = {
-      #         width: bgWidth,
-      #         height: bgHeight,
-      #         ratio: imgRatio,
-      #         offsetTop: (bgOffsetTop || 0),
-      #         offsetLeft: (bgOffsetLeft || 0),
-      #         scale: (((bgWidth / imgWidth) + (bgHeight / imgHeight)) / 2),
-      #         image: {
-      #           width: imgWidth,
-      #           height: imgHeight,
-      #           src: src
-      #         }
-      #       }
-
-      #       $this.trigger('stretch', values)
-
-      #     resizeCallback = ->
-      #       if silentFail
-      #         resize()
-      #       else
-      #         try
-      #           resize()
-      #         catch e
-      #           #nothing
-
-      #     $(window).bind('resize.spandex', resizeCallback)
-      #     $ ->
-      #       resizeCallback()
-      #       $img.fadeIn(settings.speed)
-
-      #   options = {
-      #     position: "absolute",
-      #     display: "none",
-      #     margin: 0,
-      #     padding: 0,
-      #     border: "none",
-      #     zIndex: -999999
-      #   }
-
-      #   $this.find('img.spandex').fadeOut settings.speed, ->
-      #     $(this).remove()
-
-      #   $("<img />").css(options)
-      #               .bind("load", load)
-      #               .appendTo($this)
-      #               .attr("class", "spandex")
-      #               .attr("src", src)
-    destroy: ->
-      $(window).off '.spandex'
-      @each ->
-        $(@).find('.spandex').remove()
+        $image.one('load', deferWrap).attr('src', src).each ->
+          $(@).load() if @complete
 
 
   if methods[method]

@@ -13,35 +13,26 @@
   <div class="controls">
     <h2>Should:</h2>
     <ol>
-      <li>prepend to body &#10004;</li>
-      <li>have no scroll bars &#10004;</li>
-      <li>have no white space &#10004;</li>
-      <li>destroy spandex &#10004;</li>
-      <li>not reload image</li>
+      <li>should load image then defer animation &#10004;</li>
     </ol>
     <button class="change" data-image="images/normal.jpg">normal</button>
     <button class="change" data-image="images/panoramic.jpg">panoramic</button>
     <button class="change" data-image="images/tall.jpg">tall</button>
-    <button class="destroy">destroy</button>
   </div>
 <script>
   $(function() {
-    var body = $('body');
+    body = $('body');
 
     body.spandex({
       use: "images/tall.jpg",
-      speed: 500
+      speed: 500,
+      defer: 2000
     });
 
     $(".controls button.change").on('click', function(event){
       event.preventDefault();
       target = $(this).data('target');
       body.spandex('use', $(this).data('image'));
-    });
-
-    $(".controls button.destroy").on('click', function(event){
-      event.preventDefault();
-      body.spandex('destroy');
     });
   });
 </script>

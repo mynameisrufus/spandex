@@ -2,7 +2,11 @@ body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-h2 {
+h1 {
+  margin: 20px;
+}
+
+h1, h2 {
   text-transform: uppercase;
 }
 
@@ -15,6 +19,6 @@ ol {
   background-color: rgba(26, 26, 26, 0.5);
   position: fixed;
   bottom: 20px;
-  left: 20px;
+  right: 20px;
   padding: 20px;
 }
