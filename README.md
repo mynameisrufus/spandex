@@ -15,7 +15,7 @@ Tested:
 
 ## Basic usage
 ```javascript
-$("body").spandex({use: "/images/studio54.jpg"});
+$("body").spandex("/images/studio54.jpg");
 ```
 
 See `tests` for other examples.

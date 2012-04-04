@@ -5,7 +5,7 @@
   <meta name = "viewport" content = "user-scalable=no, initial-scale=1.0, maximum-scale=1.0, width=device-width">
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <link href="test.css" media="all" rel="stylesheet" type="text/css" />
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+  <script src="jquery/jquery-1.7.1.js" type="text/javascript"></script>
   <script src="../lib/jquery.spandex.js" type="text/javascript"></script>
 </head>
 <body>
@@ -16,6 +16,7 @@
     <ol>
       <li>should trigger change callback &#10004;</li>
       <li>should trigger resize callback &#10004;</li>
+      <li>should call callback as argument &#10004;</li>
     </ol>
     <button class="change" data-image="images/normal.jpg">normal</button>
     <button class="change" data-image="images/panoramic.jpg">panoramic</button>
@@ -25,15 +26,18 @@
   $(function() {
     body = $('body');
 
-    body.spandex({
-      use: "images/tall.jpg",
-      speed: 500,
-      change: function(event, $image){
-        console.log($image);
-      },
-      stretch: function(event, values){
-        console.log(values);
-      }
+    body.spandex({ speed: 500 });
+
+    body.on('change', function(event, $image){
+      console.log("change callback", arguments);
+    });
+
+    body.on('stretch', function(event, updated) {
+      console.log("stretch callback", arguments);
+    });
+
+    body.spandex('use', "images/tall.jpg", function($image) {
+      console.log("callback as argument", arguments);
     });
 
     $(".controls button.change").on('click', function(event){

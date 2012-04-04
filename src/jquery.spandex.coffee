@@ -2,85 +2,178 @@ $ = jQuery
 
 $.fn.spandex = (method) ->
 
+  _method = (method) =>
+    if methods[method]
+      methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ))
+    else if ( typeof method == 'object' || typeof method == 'string' || ! method )
+      methods.init.apply( this, arguments )
+    else
+      $.error( "Method #{method} does not exist on jQuery.spandex" )
+
   safe = $.browser.msie && $.browser.version <= 7
 
-  calculate = (bw, bh, ow, oh) ->
-    # bw: bounding width
-    # bh: bounding height
-    # ow: original width
-    # oh: original height
-    # r : ratio
-    # nw: new width
-    # nh: new height
-    # ot: offset top
-    # ol: offset left
+  calculate =
+    # Calculate the new dimensions of the image based on the bounding
+    # height and width.
+    image: (bw, bh, ow, oh, min) ->
 
-    r = ow / oh
+      # Stub bounding height and width if less than specified min height
+      # and width.
+      bw = min.width if bw <= min.width
+      bh = min.height if bh <= min.height
 
-    if ( bw / r ) > bh
-      nw = bw
-      nh = ( bw / ow ) * oh
-      ot = ( ( bw / r ) - bh ) / 2
-      ol = 0
-      s  = bw / ow
-    else
-      nh = bh
-      nw = ( bh / oh ) * ow
-      ot = 0
-      ol = ( nw - bw ) / 2
-      s  = bh / oh
+      # Calculate the image ratio by dividing the original width by the
+      # original height.
+      r = ow / oh
 
-    width: Math.ceil(nw), height: Math.ceil(nh), top: ot, left: ol, ratio: r, scale: s
+      # If the bounding width divided by the ratio is greater than the
+      # bounding height we scale and clip y, if not we scale and clip x.
+      if ( bw / r ) > bh
+        nw = bw
+        nh = ( bw / ow ) * oh
+        ot = ( ( bw / r ) - bh ) / 2
+        ol = 0
+        s  = bw / ow
+      else
+        nh = bh
+        nw = ( bh / oh ) * ow
+        ot = 0
+        ol = ( nw - bw ) / 2
+        s  = bh / oh
 
+      width: nw, height: nh, top: ot, left: ol, ratio: r, scale: s
+
+    # Calculate the new dimensions of the wrapper based on the bounding
+    # height and width clipping the dimensions if specified.
+    wrapper: (bw, bh, clip, min) ->
+
+      nw = bw - (clip.right + clip.left)
+      nw = min.width if nw <= min.width
+
+      nh = bh - (clip.bottom + clip.top)
+      nh = min.height if nh <= min.height
+
+      width: nw, height: nh, top: clip.top, left: clip.left
+
+  # Stretch callback function using with window or bounding element
+  # `resize` event.
   stretch = ($wrapper, $image, options) =>
 
-    x = if options.fullscreen then $(window).width() else @width()
-    x = x - (options.offset.left + options.offset.right)
+    boundingWidth  = if options.wrapper.fullscreen then $(window).width() else @width()
+    boundingHeight = if options.wrapper.fullscreen then $(window).height() else @height()
 
-    y = if options.fullscreen then $(window).height() else @height()
-    y = y - (options.offset.top + options.offset.bottom)
+    wrapper = calculate.wrapper boundingWidth,
+                                boundingHeight,
+                                options.wrapper.clip,
+                                options.wrapper.min
 
-    width  = x
-    height = y
+    $wrapper.css wrapper
 
-    $wrapper.css $.extend {
-      height: height
-      width: width
-    }, options.offset
+    # Use the wrapper width and height because the wrapper my have been
+    # clipped.
+    image = calculate.image wrapper.width,
+                            wrapper.height,
+                            options.image.width,
+                            options.image.height,
+                            options.image.min
 
-    ix = if (width >= options.min.width) then width else options.min.width
-    iy = if (height >= options.min.height) then height else options.min.height
+    # Temporary css options object for image
+    _image =
+      top: 0
+      left: 0
+      width: image.width
+      height: image.height
 
-    calc = calculate ix, iy, options.image.width, options.image.height
-    css  = top: 0, left: 0, width: calc.width, height: calc.height
+    # center the image if specified.
+    _image.top  = "-#{image.top}px" if options.image.centered.y
+    _image.left = "-#{image.left}px" if options.image.centered.x
 
-    if options.centeredY
-      css.top = "-#{calc.top}px"
-    if options.centeredX
-      css.left = "-#{calc.left}px"
+    $image.css _image
 
-    $image.css css
+    @trigger 'stretch', { wrapper: wrapper, image: image }
 
-    @trigger 'stretch',
-      wrapper:
-        height: height
-        width: width
-        offset: options.offset
-      image:
-         height: calc.width
-         width: calc.height
-         offset:
-           top: calc.top
-           left: calc.left
-         ratio: calc.ratio
-         scale: calc.scale
+  appendWrapper = (index, el, options) ->
+    $(el).find('div.spandex').remove()
+    $wrapper = $ '<div class="spandex"/>'
+    $wrapper.css options.wrapper.css
+    $wrapper.data 'spandex', options
+    $(el).append $wrapper
+
+  appendImage = (index, el, src, callback) =>
+    $wrapper = $(el).find 'div.spandex'
+    _options = $wrapper.data 'spandex'
+    $image   = $("<img />").css _options.image.css
+
+    loadCallback = =>
+      $wrapper.find('img').fadeOut _options.speed, ->
+        $(this).remove()
+      $wrapper.append $image
+
+      # store the original width and height of the image before we alter
+      # it.
+      _options.image.width  = $image.width()
+      _options.image.height = $image.height()
+      _options.image.src    = src
+
+      $wrapper.data 'spandex', _options
+
+      $image.fadeIn _options.speed
+
+      stretchCallback = ->
+        func = ->
+          stretch $wrapper, $image, _options
+        if safe
+          try
+            func()
+          catch e
+            # nothing
+        else
+          func()
+
+      stretchCallback()
+
+      @trigger 'change', $image
+
+      callback.apply @, $image if callback
+
+      $(window).on "resize", stretchCallback
+
+      @one 'destroy', =>
+        @unbind '.spandex'
+        $(window).off "resize", stretchCallback
+        clearTimeout $wrapper.data('spandex.timeout')
+        $wrapper.remove()
+
+    deferWrap = ->
+      clearTimeout $wrapper.data('spandex.timeout')
+      unless _options.defer == 0
+        id = setTimeout loadCallback, _options.defer
+        $wrapper.data 'spandex.timeout', id
+      else
+        loadCallback()
+
+    $image.one('load', deferWrap).attr('src', src).each ->
+      $(@).load() if @complete
 
   methods =
-    init: (options) ->
-      @each ->
-        $wrapper = $ '<div class="spandex"/>'
+    init: (options, src, callback) ->
 
-        $wrapper.css $.extend {
+      _options = $.extend {
+        speed: 0
+        defer: 0
+      }, options
+
+      _options.wrapper = $.extend true, {
+        fullscreen: true
+        min:
+          width : 0
+          height: 0
+        clip:
+          top: 0
+          bottom: 0
+          left: 0
+          right: 0
+        css:
           left      : 0
           top       : 0
           position  : "fixed"
@@ -90,39 +183,36 @@ $.fn.spandex = (method) ->
           padding   : 0
           height    : "100%"
           width     : "100%"
-        }, options.wrapper
+      }, options.wrapper
 
-        _options = $.extend {
-          speed     : 0
-          centeredX : true
-          centeredY : true
-          defer: 0
-          fullscreen: true
-        }, options
-
-        _options.min = $.extend {
+      _options.image = $.extend true, {
+        centered:
+          x: true
+          y: true
+        min:
           width: 0
           height: 0
-        }, options.min
+        css:
+          position: "absolute"
+          display: "none"
+          margin: 0
+          padding: 0
+          border: "none"
+          zIndex: -999999
+          maxWidth: "none"
+          maxHeight: "none"
+      }, options.image
 
-        _options.offset = $.extend {
-          top: 0
-          bottom: 0
-          left: 0
-          right: 0
-        }, options.offset
+      @each (index, el) ->
+        appendWrapper index, el, _options
 
-        $wrapper.data 'spandex', _options
-
-        $(@).append($wrapper).
-          bind('change.spandex', options.change).
-          bind('stretch.spandex', options.stretch)
-
-      if options.use
-        methods.use.call @, options.use
+      if typeof arguments[0] == "string"
+        _method 'use', arguments[0], arguments[1]
+      else if typeof arguments[1] == "string"
+        _method 'use', arguments[1], arguments[2]
       else
         @
-    
+
     destroy: ->
       @trigger 'destroy'
 
@@ -131,71 +221,6 @@ $.fn.spandex = (method) ->
 
     use: (src, callback) ->
       @each (index, el) =>
-        $wrapper = $(el).find '.spandex'
+        appendImage index, el, src, callback
 
-        options  = $wrapper.data 'spandex'
-
-        $image   = $("<img />").css
-          position: "absolute",
-          display: "none",
-          margin: 0,
-          padding: 0,
-          border: "none",
-          zIndex: -999999
-
-        loadCallback = =>
-          $wrapper.find('img').fadeOut options.speed, ->
-            $(this).remove()
-
-          $wrapper.append $image
-          # iOS needs a wait for the animation to work
-          $image.fadeIn options.speed
-
-          options.image =
-            width: $image.width()
-            height: $image.height()
-
-          $wrapper.data 'spandex', options
-
-          stretchCallback = ->
-            func = ->
-              stretch $wrapper, $image, options
-            if safe
-              try
-                func()
-              catch e
-                # nothing
-            else
-              func()
-
-          stretchCallback()
-
-          @trigger 'change', $image
-
-          callback.call @, $image, values if callback
-
-          $(window).on "resize", stretchCallback
-
-          @one 'destroy', =>
-            @unbind '.spandex'
-            $(window).off "resize", stretchCallback
-            $wrapper.remove()
-
-        deferWrap = ->
-          clearTimeout $wrapper.data('spandex.timeout')
-          unless options.defer == 0
-            id = setTimeout loadCallback, options.defer
-            $wrapper.data 'spandex.timeout', id
-          else
-            loadCallback()
-
-        $image.one('load', deferWrap).attr('src', src).each ->
-          $(@).load() if @complete
-
-
-  if methods[method]
-    methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ))
-  else if ( typeof method == 'object' || ! method )
-    methods.init.apply( this, arguments )
-  else
-    $.error( "Method #{method} does not exist on jQuery.spandex" )
+  _method.apply @, arguments
