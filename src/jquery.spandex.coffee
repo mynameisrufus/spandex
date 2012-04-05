@@ -1,14 +1,18 @@
-$ = jQuery
+root = @
+$ = root.jQuery || root.Zepto || root.ender
 
 $.fn.spandex = (method) ->
 
   _method = (method) =>
     if methods[method]
-      methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ))
-    else if ( typeof method == 'object' || typeof method == 'string' || ! method )
-      methods.init.apply( this, arguments )
+      methods[method].apply @, Array.prototype.slice.call( arguments, 1 )
+    else if typeof method == 'string'
+      methods.init.apply @
+      methods.use.apply @, arguments
+    else if typeof method == 'object' || ! method
+      methods.init.apply @, arguments
     else
-      $.error( "Method #{method} does not exist on jQuery.spandex" )
+      $.error( "argument error for jQuery.spandex" )
 
   safe = $.browser.msie && $.browser.version <= 7
 
@@ -94,7 +98,7 @@ $.fn.spandex = (method) ->
 
   appendWrapper = (index, el, options) ->
     $(el).find('div.spandex').remove()
-    $wrapper = $ '<div class="spandex"/>'
+    $wrapper = $(document.createElement('div')).addClass 'spandex'
     $wrapper.css options.wrapper.css
     $wrapper.data 'spandex', options
     $(el).append $wrapper
@@ -102,7 +106,8 @@ $.fn.spandex = (method) ->
   appendImage = (index, el, src, callback) =>
     $wrapper = $(el).find 'div.spandex'
     _options = $wrapper.data 'spandex'
-    $image   = $("<img />").css _options.image.css
+    image    = new Image()
+    $image   = $(image).css _options.image.css
 
     loadCallback = =>
       $wrapper.find('img').fadeOut _options.speed, ->
@@ -111,12 +116,12 @@ $.fn.spandex = (method) ->
 
       # store the original width and height of the image before we alter
       # it.
-      _options.image.width  = $image.width()
-      _options.image.height = $image.height()
+      window.img = $image
+      _options.image.width  = image.width
+      _options.image.height = image.height
       _options.image.src    = src
 
       $wrapper.data 'spandex', _options
-
       $image.fadeIn _options.speed
 
       stretchCallback = ->
@@ -153,63 +158,73 @@ $.fn.spandex = (method) ->
         loadCallback()
 
     $image.one('load', deferWrap).attr('src', src).each ->
-      $(@).load() if @complete
+      $(@).trigger 'load' if @complete
 
   methods =
-    init: (options, src, callback) ->
+    init: (options = {}, src, callback) ->
 
       _options = $.extend {
         speed: 0
         defer: 0
       }, options
 
-      _options.wrapper = $.extend true, {
+      _options.wrapper = $.extend {
         fullscreen: true
-        min:
-          width : 0
-          height: 0
-        clip:
-          top: 0
-          bottom: 0
-          left: 0
-          right: 0
-        css:
-          left      : 0
-          top       : 0
-          position  : "fixed"
-          overflow  : "hidden"
-          zIndex    : -999999
-          margin    : 0
-          padding   : 0
-          height    : "100%"
-          width     : "100%"
-      }, options.wrapper
+      }, (options.wrapper || options.wrapper = {})
 
-      _options.image = $.extend true, {
-        centered:
-          x: true
-          y: true
-        min:
-          width: 0
-          height: 0
-        css:
-          position: "absolute"
-          display: "none"
-          margin: 0
-          padding: 0
-          border: "none"
-          zIndex: -999999
-          maxWidth: "none"
-          maxHeight: "none"
-      }, options.image
+      _options.wrapper.min = $.extend {
+        width: 0
+        height: 0
+      }, options.wrapper.min || {}
+
+      _options.wrapper.clip = $.extend {
+        top: 0
+        bottom: 0
+        left: 0
+        right: 0
+      }, options.wrapper.clip || {}
+
+      _options.wrapper.css = $.extend {
+        left: 0
+        top: 0
+        position: "fixed"
+        overflow: "hidden"
+        zIndex: -999999
+        margin: 0
+        padding: 0
+        height: "100%"
+        width: "100%"
+      }, options.wrapper.css || {}
+
+      _options.image = $.extend {}, (options.image || options.image = {})
+
+      _options.image.centered = $.extend {
+        x: true
+        y: true
+      }, options.wrapper.centered || {}
+
+      _options.image.min = $.extend {
+        width: 0
+        height: 0
+      }, options.wrapper.min || {}
+
+      _options.image.css = $.extend {
+        position: "absolute"
+        display: "none"
+        margin: 0
+        padding: 0
+        border: "none"
+        zIndex: -999999
+        maxWidth: "none"
+        maxHeight: "none"
+        opacity: 100
+      }, options.wrapper.css || {}
 
       @each (index, el) ->
         appendWrapper index, el, _options
 
-      if typeof arguments[0] == "string"
-        _method 'use', arguments[0], arguments[1]
-      else if typeof arguments[1] == "string"
-        _method 'use', arguments[1], arguments[2]
+      if src
+        _method 'use', src, callback
       else
         @
 
@@ -217,7 +232,7 @@ $.fn.spandex = (method) ->
       @trigger 'destroy'
 
     stretch: ->
-      $(@).resize()
+      @trigger 'resize'
 
     use: (src, callback) ->
       @each (index, el) =>

@@ -12,6 +12,7 @@ Tested:
 * Safari
 * iOS
 
+Works with jQuery and Zepto.
 
 ## Basic usage
 ```javascript
