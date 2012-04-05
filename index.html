@@ -4,20 +4,28 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Spandex by mynameisrufus</title>
-    
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <script src="javascripts/scale.fix.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script src="javascripts/spandex.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <style>
+      header, footer, section {
+        background:transparent;
+        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#80FFFFFF,endColorstr=#80FFFFFF);
+        zoom: 1;
+      }
+    </style>
     <![endif]-->
   </head>
   <body>
     <div class="wrapper">
       <header>
         <h1>Spandex</h1>
-        <p>jQuery and Zepto background image stretcher</p>
+        <h2>Background stretcher making pages attractive since 1959.</h2>
         <p class="view"><a href="https://github.com/mynameisrufus/spandex">View the Project on GitHub <small>mynameisrufus/spandex</small></a></p>
         <ul>
           <li><a href="https://github.com/mynameisrufus/spandex/zipball/master">Download <strong>ZIP File</strong></a></li>
@@ -26,41 +34,93 @@
         </ul>
       </header>
       <section>
-        <h1>Spandex</h1>
+        <p>use jQuery or Zepto</p>
 
-<p>The ultimate background image stretcher.</p>
+        <p>Simply:</p>
+        <div class="highlight">
+<pre><span class="nx">$</span><span class="p">(</span><span
+class="s1">'body'</span><span class="p">).</span><span
+class="nx">spandex</span><span class="p">(</span><span
+class="s2">"images/studio54.jpg"</span><span class="p">);</span>
+</pre>
+        </div>
 
-<p>Simply:</p>
+        <p>Or fade between images:</p>
+        <div class="highlight">
+<pre><span class="nx">$</span><span class="p">(</span><span
+class="s1">'body'</span><span class="p">).</span><span
+class="nx">spandex</span><span class="p">({</span> <span
+class="nx">speed</span><span class="o">:</span> <span
+class="mi">1000</span> <span class="p">},</span> <span
+class="s2">"images/studio54.jpg"</span><span class="p">);</span>
+</pre>
+        </div>
 
-<p>Or fade between images:
-<code>javascript
-$('body').spandex({ speed: 1000 }, "images/studio54.jpg");
-</code></p>
+        <p>Even give a single element a stretchy background:</p>
+        <div class="highlight">
+<pre><span class="kd">var</span> <span class="nx">opts</span> <span
+class="o">=</span> <span class="p">{</span>
+  <span class="nx">wrapper</span><span class="o">:</span> <span
+  class="p">{</span> 
+    <span class="nx">fullscreen</span><span class="o">:</span> <span
+    class="kc">false</span><span class="p">,</span>
+    <span class="nx">css</span><span class="o">:</span> <span
+    class="p">{</span> <span class="nx">position</span><span
+    class="o">:</span> <span class="s2">"absolute"</span> <span
+    class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
 
-<p>Even give a single element a stretchy background:
-<code>javascript
-$('#travolta').spandex("images/studio54.jpg");
-</code></p>
-
-<h3>Options</h3>
-
-<table>
-<tr>
-<th>Option</th>
-      <th>Default</th>
-      <th>Description</th>
-    </tr>
-<tr>
-<td></td>
-      <td></td>
-    </tr>
-</table>
+<span class="nx">$</span><span class="p">(</span><span
+class="s1">'#travolta'</span><span class="p">).</span><span
+class="nx">spandex</span><span class="p">(</span><span
+class="nx">opts</span><span class="p">,</span> <span
+class="s2">"images/studio54.jpg"</span><span class="p">);</span>
+</pre>
+        </div>
+        <table>
+          <tr>
+            <th>Option</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td>speed</td>
+            <td>0</td>
+            <td>Speed of fade in and fade out</td>
+          </tr>
+          <tr>
+            <td>defer</td>
+            <td>0</td>
+            <td>Time to wait after the image has loaded to show or fade in the image</td>
+          </tr>
+        </table>
+        <table>
+          <tr>
+            <th>Event</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td>change</td>
+            <td>When the image has loaded and is about to be shown</td>
+          </tr>
+          <tr>
+            <td>stretch</td>
+            <td>When ever the image changes size.</td>
+          </tr>
+        </table>
+        <p>See the tests directory for many more examples</p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/mynameisrufus">mynameisrufus</a></p>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
+    <script>
+      $(function() {
+        $('body').spandex({speed: 1000}, "images/spandex.jpg");
+      });
+    </script>
     <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
   </body>
 </html>

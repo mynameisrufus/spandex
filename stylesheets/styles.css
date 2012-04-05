@@ -218,6 +218,12 @@ footer {
   }
 }
 
+header, footer, section {
+  background-color: rgba(255,255,255,0.8);
+  padding: 5px;
+  border-radius: 5px;
+}
+
 @media print, screen and (max-width: 720px) {
   body {
     word-wrap:break-word;
