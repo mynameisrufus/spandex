@@ -1,6 +1,6 @@
 # Spandex
 
-A jQuery plugin for stretchy backgrounds.
+A jQuery and Zepto plugin for stretchy backgrounds.
 
 __current status:__ in development
 
@@ -11,8 +11,6 @@ Tested:
 * ie7
 * Safari
 * iOS
-
-Works with jQuery and Zepto.
 
 ## Basic usage
 ```javascript
