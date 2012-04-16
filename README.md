@@ -7,8 +7,8 @@ __current status:__ in development
 Tested:
 
 * Chrome
-* Fire fox
-* ie7
+* Firefox
+* IE 7 and 8
 * Safari
 * iOS
 
@@ -18,6 +18,12 @@ $("body").spandex("/images/studio54.jpg");
 ```
 
 See `tests` for other examples.
+
+## IE
+
+If you have problems in IE check for `img { maxWidth: 100%; }` or
+similar as it creates problems some how, seems the only way to fix 
+it is to remove it rather than redefine it.
 
 ### Credits
 

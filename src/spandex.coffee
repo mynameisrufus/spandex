@@ -90,7 +90,10 @@ $.fn.spandex = (method) ->
     _image.top  = "-#{image.top}px" if options.image.centered.y
     _image.left = "-#{image.left}px" if options.image.centered.x
 
-    $image.css _image
+    try
+      $image.css _image
+    catch e
+      # do nothing dom element does not yet exist in ie
 
     @trigger 'stretch', { wrapper: wrapper, image: image }
 
@@ -105,7 +108,12 @@ $.fn.spandex = (method) ->
     $wrapper = $(el).find 'div.spandex'
     _options = $wrapper.data 'spandex'
     image    = new Image()
-    $image   = $(image).css _options.image.css
+    $image   = $ image
+
+    try
+      $image.css _options.image.css
+    catch e
+      # do nothing dom element does not yet exist in ie
 
     loadCallback = =>
       $wrapper.find('img').fadeOut _options.speed, ->
