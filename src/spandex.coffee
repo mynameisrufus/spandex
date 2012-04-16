@@ -14,8 +14,6 @@ $.fn.spandex = (method) ->
     else
       $.error( "argument error for jQuery.spandex" )
 
-  safe = $.browser.msie && $.browser.version <= 7
-
   calculate =
     # Calculate the new dimensions of the image based on the bounding
     # height and width.
@@ -116,7 +114,6 @@ $.fn.spandex = (method) ->
 
       # store the original width and height of the image before we alter
       # it.
-      window.img = $image
       _options.image.width  = image.width
       _options.image.height = image.height
       _options.image.src    = src
@@ -125,15 +122,7 @@ $.fn.spandex = (method) ->
       $image.fadeIn _options.speed
 
       stretchCallback = ->
-        func = ->
-          stretch $wrapper, $image, _options
-        if safe
-          try
-            func()
-          catch e
-            # nothing
-        else
-          func()
+        stretch $wrapper, $image, _options
 
       stretchCallback()
 
@@ -215,8 +204,6 @@ $.fn.spandex = (method) ->
         padding: 0
         border: "none"
         zIndex: -999999
-        maxWidth: "none"
-        maxHeight: "none"
         opacity: 100
       }, options.wrapper.css || {}
 
